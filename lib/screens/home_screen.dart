@@ -136,37 +136,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Stack(
-                  children: [
-                    PageView(
-                      controller: _bannerController,
-                      onPageChanged: (index) {
-                        setState(() => _currentBanner = index);
-                      },
-                      children: _banners,
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(_banners.length, (index) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentBanner == index
-                                  ? const Color(0xFF16A34A)
-                                  : Colors.white.withOpacity(0.5),
-                            ),
-                          );
-                        }),
+                SizedBox(
+                  height: 120,
+                  child: Stack(
+                    children: [
+                      PageView(
+                        controller: _bannerController,
+                        onPageChanged: (index) {
+                          setState(() => _currentBanner = index);
+                        },
+                        children: _banners,
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(_banners.length, (index) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentBanner == index
+                                    ? const Color(0xFF16A34A)
+                                    : Colors.white.withOpacity(0.5),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 18),
                 GridView.count(
