@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // History related variables
   final ApiService _apiService = ApiService();
+  final ImagePicker _picker = ImagePicker();
   HistoryResponse? _historyResponse;
   bool _isLoadingHistory = false;
   String? _historyError;
@@ -130,6 +131,147 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _showImageSourceBottomSheet() {
+    final navigatorContext = context;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Title
+            const Text(
+              'Choose Image Source',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF222222),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Camera option
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Color(0xFF16A34A),
+                  size: 24,
+                ),
+              ),
+              title: const Text(
+                'Take Photo',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF222222),
+                ),
+              ),
+              subtitle: const Text(
+                'Use camera to take a new photo',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Color(0xFF7B7B7B),
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final XFile? photo = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
+                if (photo != null) {
+                  Navigator.push(
+                    navigatorContext,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DiagnosisResultScreen(imagePath: photo.path),
+                    ),
+                  );
+                }
+              },
+            ),
+            // Gallery option
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF16A34A),
+                  size: 24,
+                ),
+              ),
+              title: const Text(
+                'Choose from Gallery',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF222222),
+                ),
+              ),
+              subtitle: const Text(
+                'Select an existing photo from your device',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Color(0xFF7B7B7B),
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final XFile? photo = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
+                if (photo != null) {
+                  Navigator.push(
+                    navigatorContext,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DiagnosisResultScreen(imagePath: photo.path),
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onNavBarItemTapped(int index) {
     print('Navigation tapped: index = $index'); // Debug print
 
@@ -150,254 +292,264 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     print('Building with selectedIndex: $_selectedIndex'); // Debug print
-    final ImagePicker _picker = ImagePicker();
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Color(0xFFE6F2EA),
-                      child: Icon(
-                        Icons.person,
-                        color: Color(0xFF16A34A),
-                        size: 28,
+        child: RefreshIndicator(
+          onRefresh: _loadHistory,
+          color: const Color(0xFF16A34A),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Color(0xFFE6F2EA),
+                        child: Icon(
+                          Icons.person,
+                          color: Color(0xFF16A34A),
+                          size: 28,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _getGreeting(),
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getGreeting(),
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF7B7B7B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Plant Health Assistant',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF222222),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Stack(
+                        children: [
+                          Icon(
+                            Icons.notifications_none,
+                            size: 28,
                             color: Color(0xFF7B7B7B),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Plant Health Assistant',
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF222222),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Stack(
-                      children: [
-                        Icon(
-                          Icons.notifications_none,
-                          size: 28,
-                          color: Color(0xFF7B7B7B),
-                        ),
-                        if (_historyResponse != null &&
-                            _historyResponse!.results.isNotEmpty)
-                          Positioned(
-                            right: 0,
-                            top: 2,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Color(0xFFFF3B30),
-                                shape: BoxShape.rectangle,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                _historyResponse!.results.length > 9
-                                    ? '${_historyResponse!.results.length}+'
-                                    : '${_historyResponse!.results.length}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Poppins',
+                          if (_historyResponse != null &&
+                              _historyResponse!.results.isNotEmpty)
+                            Positioned(
+                              right: 0,
+                              top: 2,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFFF3B30),
+                                  shape: BoxShape.rectangle,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _historyResponse!.results.length > 9
+                                      ? '${_historyResponse!.results.length}+'
+                                      : '${_historyResponse!.results.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  height: 120,
-                  child: Stack(
-                    children: [
-                      PageView(
-                        controller: _bannerController,
-                        onPageChanged: (index) {
-                          setState(() => _currentBanner = index);
-                        },
-                        children: _banners,
-                      ),
-                      Positioned(
-                        bottom: 8,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(_banners.length, (index) {
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _currentBanner == index
-                                    ? const Color(0xFF16A34A)
-                                    : Colors.white.withOpacity(0.5),
-                              ),
-                            );
-                          }),
-                        ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 18),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 0.8,
-                ),
-                const SizedBox(height: 16),
-
-                // Recent Plant Diagnoses Section
-                const SizedBox(height: 20),
-                const Text(
-                  'Recent Plant Diagnoses',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF222222),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                if (_isLoadingHistory)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF16A34A),
-                      ),
-                    ),
-                  )
-                else if (_historyError != null)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200, width: 1),
-                    ),
-                    child: Text(
-                      'Error: $_historyError',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        color: Colors.red.shade700,
-                      ),
-                    ),
-                  )
-                else if (_historyResponse != null &&
-                    _historyResponse!.results.isNotEmpty)
-                  GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 14,
-                          crossAxisSpacing: 14,
-                          childAspectRatio: 0.8,
-                        ),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _historyResponse!.results.length > 4
-                        ? 4
-                        : _historyResponse!.results.length,
-                    itemBuilder: (context, index) {
-                      final item = _historyResponse!.results[index];
-                      return _PlantDiagnosisCard(
-                        historyItem: item,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ClassificationDetailScreen(
-                                classificationId: item.id,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F8F0),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF16A34A).withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    height: 120,
+                    child: Stack(
                       children: [
-                        Icon(
-                          Icons.camera_alt_outlined,
-                          size: 48,
-                          color: const Color(0xFF16A34A).withOpacity(0.6),
+                        PageView(
+                          controller: _bannerController,
+                          onPageChanged: (index) {
+                            setState(() => _currentBanner = index);
+                          },
+                          children: _banners,
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No Plant Diagnoses Yet',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF222222),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Take your first plant photo to start monitoring plant health',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Color(0xFF7B7B7B),
+                        Positioned(
+                          bottom: 8,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(_banners.length, (index) {
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _currentBanner == index
+                                      ? const Color(0xFF16A34A)
+                                      : Colors.white.withOpacity(0.5),
+                                ),
+                              );
+                            }),
                           ),
                         ),
                       ],
                     ),
                   ),
-              ],
+                  const SizedBox(height: 18),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.8,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Recent Plant Diagnoses Section
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Recent Plant Diagnoses',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF222222),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (_isLoadingHistory)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF16A34A),
+                        ),
+                      ),
+                    )
+                  else if (_historyError != null)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.red.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'Error: $_historyError',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    )
+                  else if (_historyResponse != null &&
+                      _historyResponse!.results.isNotEmpty)
+                    GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 14,
+                            childAspectRatio: 0.8,
+                          ),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _historyResponse!.results.length > 4
+                          ? 4
+                          : _historyResponse!.results.length,
+                      itemBuilder: (context, index) {
+                        final item = _historyResponse!.results[index];
+                        return _PlantDiagnosisCard(
+                          historyItem: item,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ClassificationDetailScreen(
+                                      classificationId: item.id,
+                                    ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F8F0),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF16A34A).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 48,
+                            color: const Color(0xFF16A34A).withOpacity(0.6),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No Plant Diagnoses Yet',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF222222),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Take your first plant photo to start monitoring plant health',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: Color(0xFF7B7B7B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -411,19 +563,8 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.white,
           elevation: 4,
           shape: const CircleBorder(),
-          onPressed: () async {
-            final XFile? photo = await _picker.pickImage(
-              source: ImageSource.camera,
-            );
-            if (photo != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      DiagnosisResultScreen(imagePath: photo.path),
-                ),
-              );
-            }
+          onPressed: () {
+            _showImageSourceBottomSheet();
           },
           child: Icon(
             Icons.camera_alt,
