@@ -421,15 +421,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.8,
-                  ),
-                  const SizedBox(height: 16),
 
                   // Recent Plant Diagnoses Section
                   const SizedBox(height: 20),
@@ -548,6 +539,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                  // Add bottom padding to ensure content is scrollable past FAB
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
